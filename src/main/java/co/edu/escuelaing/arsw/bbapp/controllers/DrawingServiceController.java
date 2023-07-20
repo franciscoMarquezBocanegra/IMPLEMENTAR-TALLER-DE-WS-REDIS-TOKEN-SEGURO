@@ -1,11 +1,17 @@
 package co.edu.escuelaing.arsw.bbapp.controllers;
 
+import co.edu.escuelaing.arsw.bbapp.repositories.TicketRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class DrawingServiceController {
+    
+    @Autowired
+    TicketRepository ticketRepo;
 
     @RequestMapping(
             value = "/status",
@@ -17,5 +23,12 @@ public class DrawingServiceController {
                 + java.time.LocalDate.now() + ", "
                 + java.time.LocalTime.now()
                 + ". " + "The server is Runnig!\"}";
+    }
+
+    @GetMapping("/getticket")
+    public String getTicket() {
+
+        return "{\"ticket\":\""
+                + ticketRepo.getTicket() + "\"}";
     }
 }

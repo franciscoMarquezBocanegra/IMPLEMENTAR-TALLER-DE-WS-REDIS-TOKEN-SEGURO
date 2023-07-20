@@ -1,8 +1,40 @@
 // Retorna la url del servicio. Es una función de configuración.
 function BBServiceURL() {
-    return 'ws://localhost:8080/bbService';
+    var url = WShostURL() + '/bbService';
+    console.log("BBService URL Calculada: " + url);
+    return url;
 }
 
+// Retorna la url del servicio. Es una función de configuración.
+function WShostURL() {
+    var host = window.location.host;
+    var url = 'ws://' + (host);
+    console.log("host URL Calculada: " + url);
+    return url;
+}
+
+// Retorna la url del servicio. Es una función de configuración.
+function ticketServiceURL() {
+    var url = RESThostURL() + '/getticket';
+    console.log("ticketService URL Calculada: " + url);
+    return url;
+}
+
+// Retorna la url del servicio. Es una función de configuración.
+function RESThostURL() {
+    var host = window.location.host;
+    var protocol = window.location.protocol;
+    var url = protocol + '//' + (host);
+    console.log("host URL Calculada: " + url);
+    return url;
+}
+
+// Retorna la url del servicio. Es una función de configuración.
+async function getTicket() {
+    const response = await fetch(ticketServiceURL());
+    console.log("ticket: " + response);
+    return response;
+}
 
 class WSBBChannel {
     constructor(URL, callback) {
@@ -15,8 +47,18 @@ class WSBBChannel {
         this.receivef = callback;
     }
 
-    onOpen(evt) {
+    async onOpen(evt) {
         console.log("In onOpen", evt);
+        var response = await getTicket();
+        var json;
+        if (response.ok) {
+            // // if HTTP-status is 200-299
+            // get the response body (the method explained below)
+            json = await response.json();
+        } else {
+            console.log("HTTP-Error: " + response.status);
+        }
+        this.wsocket.send(json.ticket);
     }
     onMessage(evt) {
         console.log("In onMessage", evt);
@@ -46,9 +88,9 @@ class WSBBChannel {
 
 function BBCanvas() {
     const [svrStatus, setSvrStatus] = React.useState({loadingState: 'Loading Canvas ...'});
-    
+
     const comunicationWS = React.useRef(null);
-    
+
     const myp5 = React.useRef(null);
     const sketch = function (p) {
         let x = 100;
@@ -61,7 +103,7 @@ function BBCanvas() {
             if (p.mouseIsPressed === true) {
                 p.fill(0, 0, 0);
                 p.ellipse(p.mouseX, p.mouseY, 20, 20);
-                comunicationWS.current.send(p.mouseX,p.mouseY);
+                comunicationWS.current.send(p.mouseX, p.mouseY);
             }
             if (p.mouseIsPressed === false) {
                 p.fill(255, 255, 255);
@@ -74,17 +116,17 @@ function BBCanvas() {
         myp5.current = new p5(sketch, 'container');
         setSvrStatus({loadingState: 'Canvas Loaded'});
         comunicationWS.current = new WSBBChannel(BBServiceURL(),
-                        (msg) => {
-                    var obj = JSON.parse(msg);
-                    console.log("On func call back ", msg);
-                    drawPoint(obj.x, obj.y);
-                });
+                (msg) => {
+            var obj = JSON.parse(msg);
+            console.log("On func call back ", msg);
+            drawPoint(obj.x, obj.y);
+        });
         return () => {
             console.log('Clossing connection ...')
             comunicationWS.current.close();
         };
     }, []);
-    
+
     function drawPoint(x, y) {
         myp5.current.ellipse(x, y, 20, 20);
     }
